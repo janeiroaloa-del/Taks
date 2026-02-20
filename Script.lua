@@ -1,40 +1,229 @@
--- 🔥 Minato King Legacy Farm Hub v2.4 (Corrigido + ESP Players Integrado) - Delta OK
+-- 🔥 Minato NTT-Inspired Hub v6.0 for King Legacy - Delta OK (2026 style)
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local VirtualUser = game:GetService("VirtualUser")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
--- Kavo UI corrigida (fonte oficial e funcional)
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Minato King Legacy Farm v2.4", "DarkTheme")
+-- Rayfield UI (moderna, como muitos hubs NTT usam)
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Variáveis
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
-local rootPart = character:WaitForChild("HumanoidRootPart")
+local Window = Rayfield:CreateWindow({
+   Name = "Minato NTT-Style Hub v6 - King Legacy",
+   LoadingTitle = "Carregando...",
+   LoadingSubtitle = "Inspired by NTT Hub",
+   ConfigurationSaving = {Enabled = true, FolderName = "MinatoNTT", FileName = "Config"},
+   KeySystem = false
+})
 
-local farmEnabled = false
-local autoBoss = false
-local autoQuest = false
-local autoRace = false
-local flyEnabled = false
-local espEnabled = false
+Rayfield:Notify({
+   Title = "Hub Carregado!",
+   Content = "Use INSERT para abrir/fechar | Ative features na GUI",
+   Duration = 5
+})
 
--- POSIÇÕES (do seu script original)
-local POSICOES = {
-    ["Bandit"] = CFrame.new(-3052, 73, 3363),
-    ["Gorilla"] = CFrame.new(-1221, 73, 3749),
-    ["Snow Bandit"] = CFrame.new(1387, 87, -1298),
-    ["Thunder God"] = CFrame.new(-2851, 73, 4392),
-    ["Vice Amiral"] = CFrame.new(2859, 73, 4495),
-    ["Dough King"] = CFrame.new(5535, 73, -4529),
-    ["Luffy Quest"] = CFrame.new(-1230, 73, 3330),
-    ["Race V2"] = CFrame.new(-1230, 73, 3330),
+-- Configs
+local cfgs = {
+   farmEnabled = false,
+   collectEnabled = false,
+   bossEnabled = false,
+   flyEnabled = false,
+   noclipEnabled = false,
+   espEnabled = false,
+   speed = 100,
+   infJump = false
+}
+
+-- Tabs (estilo NTT: Farm, Combat, Visual, Movement, Misc)
+local FarmTab = Window:CreateTab("Farm")
+local CombatTab = Window:CreateTab("Combat")
+local VisualTab = Window:CreateTab("Visual/ESP")
+local MoveTab = Window:CreateTab("Movement")
+local MiscTab = Window:CreateTab("Misc")
+
+-- Farm Tab
+FarmTab:CreateToggle({
+   Name = "Auto Farm Level",
+   CurrentValue = false,
+   Callback = function(v) cfgs.farmEnabled = v end
+})
+
+FarmTab:CreateToggle({
+   Name = "Auto Collect Fruits/Items",
+   CurrentValue = false,
+   Callback = function(v) cfgs.collectEnabled = v end
+})
+
+FarmTab:CreateToggle({
+   Name = "Auto Boss Farm",
+   CurrentValue = false,
+   Callback = function(v) cfgs.bossEnabled = v end
+})
+
+-- Movement Tab
+MoveTab:CreateToggle({
+   Name = "Fly (WASD + Space/Shift)",
+   CurrentValue = false,
+   Callback = function(v) cfgs.flyEnabled = v end
+})
+
+MoveTab:CreateToggle({
+   Name = "Noclip",
+   CurrentValue = false,
+   Callback = function(v) cfgs.noclipEnabled = v end
+})
+
+MoveTab:CreateToggle({
+   Name = "Infinite Jump",
+   CurrentValue = false,
+   Callback = function(v) cfgs.infJump = v end
+})
+
+MoveTab:CreateSlider({
+   Name = "Walk Speed",
+   Range = {16, 500},
+   Increment = 10,
+   CurrentValue = 100,
+   Callback = function(v)
+      cfgs.speed = v
+      humanoid.WalkSpeed = v
+   end
+})
+
+-- Visual/ESP Tab
+VisualTab:CreateToggle({
+   Name = "ESP Players (Name, Lv, PvP, Health)",
+   CurrentValue = false,
+   Callback = function(v)
+      cfgs.espEnabled = v
+      if v then enableAllESP() else disableAllESP() end
+   end
+})
+
+-- Misc Tab
+MiscTab:CreateButton({
+   Name = "Rejoin Server",
+   Callback = function() game:GetService("TeleportService"):Teleport(game.PlaceId) end
+})
+
+-- Funções Fly/Noclip/Anti-AFK (mantidas)
+RunService.Heartbeat:Connect(function()
+   pcall(function()
+      humanoid.WalkSpeed = cfgs.speed
+      
+      if cfgs.noclipEnabled then
+         for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+         end
+      end
+      
+      if cfgs.flyEnabled then
+         local bv = rootPart:FindFirstChild("FlyBV") or Instance.new("BodyVelocity", rootPart)
+         bv.Name = "FlyBV"
+         bv.MaxForce = Vector3.new(1e9,1e9,1e9)
+         bv.Velocity = Vector3.new()
+         local cam = workspace.CurrentCamera
+         local dir = humanoid.MoveDirection
+         if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir += Vector3.new(0,1,0) end
+         if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then dir += Vector3.new(0,-1,0) end
+         bv.Velocity = cam.CFrame:VectorToWorldSpace(dir) * 60
+      end
+   end)
+end)
+
+UserInputService.JumpRequest:Connect(function()
+   if cfgs.infJump then humanoid:ChangeState("Jumping") end
+end)
+
+spawn(function()
+   while task.wait(300) do
+      VirtualUser:CaptureController()
+      VirtualUser:ClickButton2(Vector2.new())
+   end
+end)
+
+player.CharacterAdded:Connect(function(new)
+   character = new
+   humanoid = new:WaitForChild("Humanoid")
+   rootPart = new:WaitForChild("HumanoidRootPart")
+end)
+
+-- ESP (como no NTT: player info com cor PvP)
+local function createESP(plr)
+   if plr == player then return end
+   
+   local function apply(char)
+      local head = char:WaitForChild("Head")
+      local hum = char:WaitForChild("Humanoid")
+      
+      local bb = Instance.new("BillboardGui", head)
+      bb.Name = "MinatoESP"
+      bb.Adornee = head
+      bb.Size = UDim2.new(0,220,0,120)
+      bb.StudsOffset = Vector3.new(0,5,0)
+      bb.AlwaysOnTop = true
+      bb.MaxDistance = 1200
+      
+      local txt = Instance.new("TextLabel", bb)
+      txt.Size = UDim2.new(1,0,1,0)
+      txt.BackgroundTransparency = 1
+      txt.TextColor3 = Color3.new(1,1,1)
+      txt.TextStrokeTransparency = 0.4
+      txt.TextStrokeColor3 = Color3.new(0,0,0)
+      txt.Font = Enum.Font.GothamBold
+      txt.TextSize = 15
+      txt.TextXAlignment = Enum.TextXAlignment.Center
+      
+      spawn(function()
+         while bb.Parent do
+            task.wait(0.4)
+            local lvl = "Lv: ?"
+            local pvp = "PvP: ?"
+            local hp = "HP: ?/?"
+            
+            if plr:FindFirstChild("leaderstats") and plr.leaderstats:FindFirstChild("Level") then
+               lvl = "Lv: " .. plr.leaderstats.Level.Value
+            end
+            
+            local pvpV = plr:FindFirstChild("PVP") or plr:FindFirstChild("PvPEnabled")
+            if pvpV and pvpV:IsA("BoolValue") then
+               pvp = "PvP: " .. (pvpV.Value and "ON" or "OFF")
+            end
+            
+            hp = "HP: " .. math.floor(hum.Health) .. "/" .. math.floor(hum.MaxHealth)
+            
+            txt.TextColor3 = pvpV and pvpV.Value and Color3.new(1,0.3,0.3) or Color3.new(0.4,1,0.4)
+            txt.Text = plr.Name .. "\n" .. lvl .. "\n" .. pvp .. "\n" .. hp
+         end
+      end)
+   end
+   
+   if plr.Character then apply(plr.Character) end
+   plr.CharacterAdded:Connect(apply)
+end
+
+local function enableAllESP()
+   for _, p in Players:GetPlayers() do createESP(p) end
+end
+
+local function disableAllESP()
+   for _, p in Players:GetPlayers() do
+      if p.Character then
+         local h = p.Character:FindFirstChild("Head")
+         if h then local e = h:FindFirstChild("MinatoESP") if e then e:Destroy() end end
+      end
+   end
+end
+
+Players.PlayerAdded:Connect(function(p)
+   if cfgs.espEnabled then createESP(p) end
+end)
+
+print("Minato NTT-Style Hub v6 carregado! Abra com INSERT")    ["Race V2"] = CFrame.new(-1230, 73, 3330),
     ["Daily"] = CFrame.new(70, 73, 70),
 }
 
