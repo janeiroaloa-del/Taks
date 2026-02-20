@@ -1,338 +1,268 @@
--- 🔥 Minato NTT-Inspired Hub v6.0 for King Legacy - Delta OK (2026 style)
+-- Taks Hub | King Legacy | Fluent GUI | No Key | 2026
+-- Carrega a biblioteca Fluent (versão mais recente)
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+-- Configuração da janela principal
+local Window = Fluent:CreateWindow({
+    Title = "Taks Hub - King Legacy",
+    SubTitle = "by Minato | No Key | Update 2026",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,  -- Efeito de vidro bonito
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+-- Cria as abas
+local FarmingTab   = Window:AddTab({ Title = "Farming",   Icon = "rbxassetid://7733715400" })
+local CombatTab    = Window:AddTab({ Title = "Combat",    Icon = "rbxassetid://7734053495" })
+local FruitsTab    = Window:AddTab({ Title = "Fruits",    Icon = "rbxassetid://7733964713" })
+local MiscTab      = Window:AddTab({ Title = "Misc",      Icon = "rbxassetid://7733774602" })
+local TeleportTab  = Window:AddTab({ Title = "Teleport",  Icon = "rbxassetid://7733960984" })
+local SettingsTab  = Window:AddTab({ Title = "Settings",  Icon = "rbxassetid://7734053424" })
+
+-- Variáveis de controle
+local AutoFarm     = false
+local AutoStats    = false
+local AutoRaid     = false
+local AutoSeaKing  = false
+local SelectedFruit = "Random"
+local FarmMethod   = "Above"  -- Above / Below / Behind
+
+-- =============================================
+--                Farming Tab
+-- =============================================
+
+FarmingTab:AddToggle("AutoFarmToggle", {
+    Title = "Auto Farm Level",
+    Default = false,
+    Callback = function(v)
+        AutoFarm = v
+        Fluent:Notify({
+            Title = "Taks Hub",
+            Content = "Auto Farm Level: " .. (v and "ON" or "OFF"),
+            Duration = 4
+        })
+        
+        task.spawn(function()
+            while AutoFarm do
+                task.wait(0.3)
+                pcall(function()
+                    local player = game.Players.LocalPlayer
+                    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                    if not hrp then return end
+                    
+                    -- Implemente aqui: GetNearestMob() ou quest mob
+                    -- Exemplo: hrp.CFrame = GetNearestMob().HumanoidRootPart.CFrame * CFrame.new(0, FarmMethod == "Above" and 5 or -5, 0)
+                    
+                    -- Ataque básico (ajuste para sua tool/skill)
+                    -- game:GetService("VirtualUser"):ClickButton1(Vector2.new())
+                end)
+            end
+        end)
+    end
+})
+
+FarmingTab:AddToggle("AutoStats", {
+    Title = "Auto Stats (Melee/Defense/Fruit/Sword)",
+    Default = false,
+    Callback = function(v)
+        AutoStats = v
+        if v then
+            Fluent:Notify({Title="Taks Hub", Content="Distribuindo stats automaticamente..."})
+            -- Exemplo real: game:GetService("ReplicatedStorage").Remotes.Stats:FireServer("Melee", 1)  -- ajuste remote
+        end
+    end
+})
+
+FarmingTab:AddToggle("AutoRaid", {
+    Title = "Auto Raid / Auto Dungeon",
+    Default = false,
+    Callback = function(v) AutoRaid = v end
+})
+
+FarmingTab:AddToggle("AutoSeaKing", {
+    Title = "Auto Sea King / Ghost Ship / Hydra",
+    Default = false,
+    Callback = function(v) AutoSeaKing = v end
+})
+
+FarmingTab:AddDropdown("FarmMethod", {
+    Title = "Farm Position",
+    Values = {"Above", "Below", "Behind"},
+    Default = 1,
+    Callback = function(v)
+        FarmMethod = v
+    end
+})
+
+-- =============================================
+--                Fruits Tab
+-- =============================================
+
+FruitsTab:AddDropdown("FruitSniper", {
+    Title = "Fruit Sniper Mode",
+    Values = {"Random", "Best Only", "Specific"},
+    Default = 1,
+    Callback = function(v)
+        SelectedFruit = v
+    end
+})
+
+FruitsTab:AddToggle("AutoGrabFruit", {
+    Title = "Auto Grab / Snipe Fruits",
+    Default = false,
+    Callback = function(v)
+        -- Implemente: procure fruits no workspace → teleport + pickup
+    end
+})
+
+FruitsTab:AddButton({
+    Title = "Bring All Fruits (Server Hop se vazio)",
+    Callback = function()
+        Fluent:Notify({Title="Taks Hub", Content="Tentando trazer todas as frutas..."})
+        -- Lógica de bring fruits (ex: set parent para player)
+    end
+})
+
+-- =============================================
+--                Combat Tab
+-- =============================================
+
+CombatTab:AddToggle("InfiniteJump", {
+    Title = "Infinite Jump",
+    Default = false,
+    Callback = function(v)
+        if v then
+            game:GetService("UserInputService").JumpRequest:Connect(function()
+                local hum = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if hum then hum:ChangeState("Jumping") end
+            end)
+        end
+    end
+})
+
+CombatTab:AddSlider("WalkSpeed", {
+    Title = "WalkSpeed",
+    Min = 16,
+    Max = 300,
+    Default = 16,
+    Rounding = 1,
+    Callback = function(v)
+        local hum = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+        if hum then hum.WalkSpeed = v end
+    end
+})
+
+-- =============================================
+--                Misc Tab (inclui Anti-AFK)
+-- =============================================
+
+MiscTab:AddToggle("WaterWalk", {
+    Title = "Walk on Water",
+    Default = false,
+    Callback = function(v)
+        -- Implemente: desative CanCollide em water parts ou use clip
+    end
+})
+
+-- Anti-AFK Otimizado
+local AntiAFK = {
+    Enabled = false,
+    Connection = nil,
+    SilentMode = false,
+    FirstNotify = true
+}
 
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local VirtualUser = game:GetService("VirtualUser")
-local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
 
-local player = Players.LocalPlayer
+local function SimulateActivity()
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("Humanoid") then return end
 
--- Rayfield UI (moderna, como muitos hubs NTT usam)
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
-local Window = Rayfield:CreateWindow({
-   Name = "Minato NTT-Style Hub v6 - King Legacy",
-   LoadingTitle = "Carregando...",
-   LoadingSubtitle = "Inspired by NTT Hub",
-   ConfigurationSaving = {Enabled = true, FolderName = "MinatoNTT", FileName = "Config"},
-   KeySystem = false
-})
-
-Rayfield:Notify({
-   Title = "Hub Carregado!",
-   Content = "Use INSERT para abrir/fechar | Ative features na GUI",
-   Duration = 5
-})
-
--- Configs
-local cfgs = {
-   farmEnabled = false,
-   collectEnabled = false,
-   bossEnabled = false,
-   flyEnabled = false,
-   noclipEnabled = false,
-   espEnabled = false,
-   speed = 100,
-   infJump = false
-}
-
--- Tabs (estilo NTT: Farm, Combat, Visual, Movement, Misc)
-local FarmTab = Window:CreateTab("Farm")
-local CombatTab = Window:CreateTab("Combat")
-local VisualTab = Window:CreateTab("Visual/ESP")
-local MoveTab = Window:CreateTab("Movement")
-local MiscTab = Window:CreateTab("Misc")
-
--- Farm Tab
-FarmTab:CreateToggle({
-   Name = "Auto Farm Level",
-   CurrentValue = false,
-   Callback = function(v) cfgs.farmEnabled = v end
-})
-
-FarmTab:CreateToggle({
-   Name = "Auto Collect Fruits/Items",
-   CurrentValue = false,
-   Callback = function(v) cfgs.collectEnabled = v end
-})
-
-FarmTab:CreateToggle({
-   Name = "Auto Boss Farm",
-   CurrentValue = false,
-   Callback = function(v) cfgs.bossEnabled = v end
-})
-
--- Movement Tab
-MoveTab:CreateToggle({
-   Name = "Fly (WASD + Space/Shift)",
-   CurrentValue = false,
-   Callback = function(v) cfgs.flyEnabled = v end
-})
-
-MoveTab:CreateToggle({
-   Name = "Noclip",
-   CurrentValue = false,
-   Callback = function(v) cfgs.noclipEnabled = v end
-})
-
-MoveTab:CreateToggle({
-   Name = "Infinite Jump",
-   CurrentValue = false,
-   Callback = function(v) cfgs.infJump = v end
-})
-
-MoveTab:CreateSlider({
-   Name = "Walk Speed",
-   Range = {16, 500},
-   Increment = 10,
-   CurrentValue = 100,
-   Callback = function(v)
-      cfgs.speed = v
-      humanoid.WalkSpeed = v
-   end
-})
-
--- Visual/ESP Tab
-VisualTab:CreateToggle({
-   Name = "ESP Players (Name, Lv, PvP, Health)",
-   CurrentValue = false,
-   Callback = function(v)
-      cfgs.espEnabled = v
-      if v then enableAllESP() else disableAllESP() end
-   end
-})
-
--- Misc Tab
-MiscTab:CreateButton({
-   Name = "Rejoin Server",
-   Callback = function() game:GetService("TeleportService"):Teleport(game.PlaceId) end
-})
-
--- Funções Fly/Noclip/Anti-AFK (mantidas)
-RunService.Heartbeat:Connect(function()
-   pcall(function()
-      humanoid.WalkSpeed = cfgs.speed
-      
-      if cfgs.noclipEnabled then
-         for _, part in pairs(character:GetDescendants()) do
-            if part:IsA("BasePart") then part.CanCollide = false end
-         end
-      end
-      
-      if cfgs.flyEnabled then
-         local bv = rootPart:FindFirstChild("FlyBV") or Instance.new("BodyVelocity", rootPart)
-         bv.Name = "FlyBV"
-         bv.MaxForce = Vector3.new(1e9,1e9,1e9)
-         bv.Velocity = Vector3.new()
-         local cam = workspace.CurrentCamera
-         local dir = humanoid.MoveDirection
-         if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir += Vector3.new(0,1,0) end
-         if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then dir += Vector3.new(0,-1,0) end
-         bv.Velocity = cam.CFrame:VectorToWorldSpace(dir) * 60
-      end
-   end)
-end)
-
-UserInputService.JumpRequest:Connect(function()
-   if cfgs.infJump then humanoid:ChangeState("Jumping") end
-end)
-
-spawn(function()
-   while task.wait(300) do
-      VirtualUser:CaptureController()
-      VirtualUser:ClickButton2(Vector2.new())
-   end
-end)
-
-player.CharacterAdded:Connect(function(new)
-   character = new
-   humanoid = new:WaitForChild("Humanoid")
-   rootPart = new:WaitForChild("HumanoidRootPart")
-end)
-
--- ESP (como no NTT: player info com cor PvP)
-local function createESP(plr)
-   if plr == player then return end
-   
-   local function apply(char)
-      local head = char:WaitForChild("Head")
-      local hum = char:WaitForChild("Humanoid")
-      
-      local bb = Instance.new("BillboardGui", head)
-      bb.Name = "MinatoESP"
-      bb.Adornee = head
-      bb.Size = UDim2.new(0,220,0,120)
-      bb.StudsOffset = Vector3.new(0,5,0)
-      bb.AlwaysOnTop = true
-      bb.MaxDistance = 1200
-      
-      local txt = Instance.new("TextLabel", bb)
-      txt.Size = UDim2.new(1,0,1,0)
-      txt.BackgroundTransparency = 1
-      txt.TextColor3 = Color3.new(1,1,1)
-      txt.TextStrokeTransparency = 0.4
-      txt.TextStrokeColor3 = Color3.new(0,0,0)
-      txt.Font = Enum.Font.GothamBold
-      txt.TextSize = 15
-      txt.TextXAlignment = Enum.TextXAlignment.Center
-      
-      spawn(function()
-         while bb.Parent do
-            task.wait(0.4)
-            local lvl = "Lv: ?"
-            local pvp = "PvP: ?"
-            local hp = "HP: ?/?"
-            
-            if plr:FindFirstChild("leaderstats") and plr.leaderstats:FindFirstChild("Level") then
-               lvl = "Lv: " .. plr.leaderstats.Level.Value
-            end
-            
-            local pvpV = plr:FindFirstChild("PVP") or plr:FindFirstChild("PvPEnabled")
-            if pvpV and pvpV:IsA("BoolValue") then
-               pvp = "PvP: " .. (pvpV.Value and "ON" or "OFF")
-            end
-            
-            hp = "HP: " .. math.floor(hum.Health) .. "/" .. math.floor(hum.MaxHealth)
-            
-            txt.TextColor3 = pvpV and pvpV.Value and Color3.new(1,0.3,0.3) or Color3.new(0.4,1,0.4)
-            txt.Text = plr.Name .. "\n" .. lvl .. "\n" .. pvp .. "\n" .. hp
-         end
-      end)
-   end
-   
-   if plr.Character then apply(plr.Character) end
-   plr.CharacterAdded:Connect(apply)
-end
-
-local function enableAllESP()
-   for _, p in Players:GetPlayers() do createESP(p) end
-end
-
-local function disableAllESP()
-   for _, p in Players:GetPlayers() do
-      if p.Character then
-         local h = p.Character:FindFirstChild("Head")
-         if h then local e = h:FindFirstChild("MinatoESP") if e then e:Destroy() end end
-      end
-   end
-end
-
-Players.PlayerAdded:Connect(function(p)
-   if cfgs.espEnabled then createESP(p) end
-end)
-
-print("Minato NTT-Style Hub v6 carregado! Abra com INSERT")    ["Race V2"] = CFrame.new(-1230, 73, 3330),
-    ["Daily"] = CFrame.new(70, 73, 70),
-}
-
--- TABS
-local FarmTab = Window:NewTab("Farm")
-local BossTab = Window:NewTab("Bosses")
-local QuestTab = Window:NewTab("Quests")
-local MoveTab = Window:NewTab("Movement")
-local ESPTab = Window:NewTab("ESP")  -- Nova tab para ESP
-
--- Toggles do seu script
-FarmTab:NewToggle("Auto Farm Level", "Farma level infinito", function(state)
-    farmEnabled = state
-end)
-
-FarmTab:NewToggle("Auto Collect Items", "Pega fruits/coins", function(state)
-    getgenv().autoCollect = state
-end)
-
-FarmTab:NewButton("Teleport Farm", "Vai pro melhor spot", function()
-    rootPart.CFrame = POSICOES["Bandit"]
-end)
-
-BossTab:NewToggle("Auto Boss Farm", "Mata todos bosses", function(state)
-    autoBoss = state
-end)
-
-BossTab:NewButton("TP Thunder God", "Boss fácil", function()
-    rootPart.CFrame = POSICOES["Thunder God"]
-end)
-
-QuestTab:NewToggle("Auto Daily Quests", "Missões diárias", function(state)
-    autoQuest = state
-end)
-
-QuestTab:NewToggle("Race V2 Auto", "Completa raça V2", function(state)
-    autoRace = state
-end)
-
-MoveTab:NewToggle("Fly", "Voa livre", function(state)
-    flyEnabled = state
-end)
-
-MoveTab:NewSlider("Speed", "Velocidade", 500, 16, function(s)
-    pcall(function() humanoid.WalkSpeed = s end)
-end)
-
-MoveTab:NewButton("Save Pos", "Salva posição", function()
-    getgenv().savePos = rootPart.CFrame
-end)
-
-MoveTab:NewButton("Load Pos", "Volta posição", function()
-    if getgenv().savePos then
-        rootPart.CFrame = getgenv().savePos
+    VirtualUser:CaptureController()
+    VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    task.wait(0.08)
+    VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    
+    if AntiAFK.FirstNotify and not AntiAFK.SilentMode then
+        Fluent:Notify({
+            Title = "Taks Hub Anti-AFK",
+            Content = "Proteção ativada • Método VirtualUser otimizado",
+            Duration = 4.5
+        })
+        AntiAFK.FirstNotify = false
     end
-end)
-
--- ESP Toggle
-ESPTab:NewToggle("ESP Players (Nome, Lv, PvP, Vida)", "Mostra info acima da cabeça", function(state)
-    espEnabled = state
-    if state then
-        enableAllESP()
-        print("ESP Ativado")
-    else
-        disableAllESP()
-        print("ESP Desativado")
-    end
-end)
-
--- FUNÇÕES (mantidas do seu script)
-local function tweenTo(pos, speed)
-    speed = speed or 200
-    local distance = (rootPart.Position - pos.Position).Magnitude
-    local tweenInfo = TweenInfo.new(distance/speed, Enum.EasingStyle.Linear)
-    local tween = TweenService:Create(rootPart, tweenInfo, {CFrame = pos})
-    tween:Play()
-    tween.Completed:Wait()
 end
 
-local function collectItems()
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and (obj.Name:lower():find("fruit") or obj.Name:lower():find("drop") or obj.Name:lower():find("coin")) then
-            if (obj.Position - rootPart.Position).Magnitude < 100 then
-                tweenTo(CFrame.new(obj.Position + Vector3.new(0,10,0)))
-                fireclickdetector(obj:FindFirstChildOfClass("ClickDetector"))
-            end
+local function EnableAntiAFK()
+    if AntiAFK.Connection then return end
+    AntiAFK.Connection = LocalPlayer.Idled:Connect(function()
+        task.spawn(SimulateActivity)
+    end)
+    if not AntiAFK.SilentMode then
+        Fluent:Notify({Title = "Taks Hub", Content = "Anti-AFK ativado (otimizado 2026)", Duration = 4})
+    end
+end
+
+local function DisableAntiAFK()
+    if AntiAFK.Connection then
+        AntiAFK.Connection:Disconnect()
+        AntiAFK.Connection = nil
+        AntiAFK.FirstNotify = true
+        if not AntiAFK.SilentMode then
+            Fluent:Notify({Title = "Taks Hub", Content = "Anti-AFK desativado", Duration = 3.5})
         end
     end
 end
 
-local function farmMobs()
-    for _, enemy in pairs(workspace.Enemies:GetChildren()) do
-        if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-            tweenTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0,5,-3))
-            for i = 1, 10 do
-                VirtualInputManager:SendMouseButtonEvent(0,0,0,true,game,1)
-                wait(0.05)
-                VirtualInputManager:SendMouseButtonEvent(0,0,0,false,game,1)
-            end
-            return true
-        end
+MiscTab:AddToggle("AntiAFK", {
+    Title = "Anti-AFK Otimizado",
+    Default = true,
+    Callback = function(Value)
+        AntiAFK.Enabled = Value
+        if Value then EnableAntiAFK() else DisableAntiAFK() end
     end
-    return false
-end
+})
 
-local function farmBosses()
-    local bosses = {"Thunder God", "Vice Amiral", "Dough King"}
-    for _, bossName in pairs(bosses) do
-        for _, boss in pairs(workspace.Enemies:GetChildren()) do
+MiscTab:AddToggle("AntiAFKSilent", {
+    Title = "Modo Silencioso (sem spam de notify)",
+    Default = true,
+    Callback = function(v) AntiAFK.SilentMode = v end
+})
+
+-- Inicializa Anti-AFK por padrão
+task.delay(1.2, function()
+    AntiAFK.Enabled = true
+    EnableAntiAFK()
+    Fluent.Options.AntiAFK:SetValue(true)
+    Fluent.Options.AntiAFKSilent:SetValue(true)
+end)
+
+-- =============================================
+--                Teleport Tab
+-- =============================================
+
+local Islands = {"First Sea", "Second Sea", "Third Sea", "Sky Island", "Boss Locations", "Raid Room"}
+
+TeleportTab:AddDropdown("Teleport", {
+    Title = "Teleport To",
+    Values = Islands,
+    Callback = function(v)
+        Fluent:Notify({Title="Teleport", Content="Indo para: "..v})
+        -- Adicione CFrames reais aqui (ex: CFrame.new(0, 100, 0))
+        -- local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
+        -- hrp.CFrame = CFrame.new(x, y, z)
+    end
+})
+
+-- =============================================
+--                Finalização
+-- =============================================
+
+Fluent:SelectTab(1)  -- Abre na aba Farming
+print("Taks Hub carregado com sucesso! Boa sorte no King Legacy!")rs(workspace.Enemies:GetChildren()) do
             if boss.Name:find(bossName) and boss:FindFirstChild("Humanoid") and boss.Humanoid.Health > 0 then
                 tweenTo(boss.HumanoidRootPart.CFrame * CFrame.new(0,5,-3))
                 return true
